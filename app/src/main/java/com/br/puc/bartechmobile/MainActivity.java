@@ -6,11 +6,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.br.puc.bartechmobile.model.Produto;
 import com.br.puc.bartechmobile.service.ProdutoService;
 import com.br.puc.bartechmobile.service.ScanService;
 import com.br.puc.bartechmobile.util.rest.OnTaskFinished;
 import com.br.puc.bartechmobile.util.rest.RequestEnum;
+import com.google.zxing.integration.android.IntentIntegrator;
 
 import net.minidev.json.JSONArray;
 
@@ -35,9 +35,14 @@ public class MainActivity extends AppCompatActivity implements OnTaskFinished {
         this.produtoService = new ProdutoService(this);
         btScanner = findViewById(R.id.button);
         btScanner.setOnClickListener(v -> {
-            Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-            intent.putExtra("SAVE_HISTORY", false);
-            startActivityForResult(intent, 0);
+            IntentIntegrator integrator = new IntentIntegrator(this);
+            integrator.setDesiredBarcodeFormats(IntentIntegrator.ONE_D_CODE_TYPES);
+            integrator.setPrompt("Leia o código de barras de seu produto");
+            integrator.setCameraId(0);
+            integrator.setBeepEnabled(true);
+            integrator.setBarcodeImageEnabled(true);
+            integrator.setRequestCode(1);
+            integrator.initiateScan();
         });
     }
 
@@ -45,10 +50,10 @@ public class MainActivity extends AppCompatActivity implements OnTaskFinished {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         try {
-            if (requestCode == 0) {
-                if (resultCode == RESULT_OK) {
+            if (requestCode == 1) {
+                if (resultCode == -1) {
                     evaluateScan(data.getStringExtra("SCAN_RESULT"));
-                } else if (resultCode == RESULT_CANCELED) {
+                } else if (resultCode == 0) {
                     Toast.makeText(getApplicationContext(), "Operação cancelada", Toast.LENGTH_SHORT)
                             .show();
                 }
@@ -60,9 +65,13 @@ public class MainActivity extends AppCompatActivity implements OnTaskFinished {
     }
 
     private void evaluateScan(String content) throws Exception {
-        String[] splitted = content.split(SEPARATOR);
-        this.idVenda = splitted[1];
-        this.scanService.findProdutoIdByCodigoDeBarra(splitted[0]);
+        try {
+            String[] splitted = content.split(SEPARATOR);
+            this.idVenda = splitted[1];
+            this.scanService.findProdutoIdByCodigoDeBarra(splitted[0]);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new Exception("Erro ao ler código de barras");
+        }
     }
 
     @Override
@@ -75,10 +84,13 @@ public class MainActivity extends AppCompatActivity implements OnTaskFinished {
                     this.produtoService.addItemVendaOnVenda(idProduto, this.idVenda, (Integer) obj.get("quantidadeEstoque"));
                     break;
                 case ADD_ITEM_VENDA:
-                    System.out.println(response);
+                    Toast.makeText(getApplicationContext(), ((JSONArray) response).get(0) + " foi adicionado com sucesso!", Toast.LENGTH_LONG)
+                            .show();
+                    break;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "Erro ao requisitar o servidor\nTente mais tarde", Toast.LENGTH_SHORT)
+                    .show();
         }
     }
 }

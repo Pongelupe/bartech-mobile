@@ -1,7 +1,5 @@
 package com.br.puc.bartechmobile.util.rest;
 
-import com.br.puc.bartechmobile.model.Produto;
-
 public enum RequestEnum {
 
     ALL_PRODUTOS("$.*.allProdutoes[0]", String.class),
