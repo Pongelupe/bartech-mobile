@@ -6,27 +6,33 @@ import android.support.v7.app.AppCompatActivity;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.br.puc.bartechmobile.model.Produto;
+import com.br.puc.bartechmobile.service.ProdutoService;
 import com.br.puc.bartechmobile.service.ScanService;
-import com.br.puc.bartechmobile.util.JsonPathReader;
 import com.br.puc.bartechmobile.util.rest.OnTaskFinished;
 import com.br.puc.bartechmobile.util.rest.RequestEnum;
 
-import org.json.JSONArray;
-import org.json.JSONException;
+import net.minidev.json.JSONArray;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity implements OnTaskFinished {
 
     private Button btScanner;
     private ScanService scanService;
+    private ProdutoService produtoService;
     private static final String SEPARATOR = "#";
     private String idVenda;
+    private String idProduto;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         this.scanService = new ScanService(this);
+        this.produtoService = new ProdutoService(this);
         btScanner = findViewById(R.id.button);
         btScanner.setOnClickListener(v -> {
             Intent intent = new Intent("com.google.zxing.client.android.SCAN");
@@ -64,10 +70,14 @@ public class MainActivity extends AppCompatActivity implements OnTaskFinished {
         try {
             switch (request) {
                 case ALL_PRODUTOS:
-                    System.out.println(((JSONArray) response).get(0));
+                    Map<?, ?> obj = (LinkedHashMap) ((JSONArray) response).get(0);
+                    idProduto = (String) obj.get("id");
+                    this.produtoService.addItemVendaOnVenda(idProduto, this.idVenda, (Integer) obj.get("quantidadeEstoque"));
                     break;
+                case ADD_ITEM_VENDA:
+                    System.out.println(response);
             }
-        } catch (JSONException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
