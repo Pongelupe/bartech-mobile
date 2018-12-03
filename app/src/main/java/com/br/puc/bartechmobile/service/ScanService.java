@@ -40,6 +40,8 @@ public class ScanService {
         sb.append("         } ");
         sb.append("       ) { ");
         sb.append("          id");
+        sb.append("          nome");
+        sb.append("          preco");
         sb.append("          quantidadeEstoque");
         sb.append("       }  ");
         sb.append("}  ");
